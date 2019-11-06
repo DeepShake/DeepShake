@@ -127,5 +127,7 @@ urls = [
     "https://drive.google.com/uc?id=14t5kC3JYBOn0el8IxtWcD-LgQ1KS8u5o",
 ]
 
+import os
+
 for url in urls:
-    gdown.download(url)
+    os.system(f"gdown {url}")
