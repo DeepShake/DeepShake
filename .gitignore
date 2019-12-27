@@ -1,2 +1,14 @@
 data/
 arrays/
+Data_Processing/mseed2
+metadata/
+compressed/
+extracted/
+models/*.h5
+archive/
+*.gif
+
+
+
+
+
