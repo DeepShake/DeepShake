@@ -79,7 +79,7 @@ def create_time_steps(length):
     return time_steps
 
 
-def multi_step_plot(history, true_future, save_path, epicenter = None, prediction = None, scale = 1):
+def multi_step_plot(history, true_future, save_path, epicenter = None, prediction = None, scale = 1, title = None):
     """
     Plots the timeseries data for a given earthquake across the different stations
     based on the distance of each station from the epicenter of the quake,
@@ -105,6 +105,9 @@ def multi_step_plot(history, true_future, save_path, epicenter = None, predictio
     scale: int
     Quantity by which to scale the plotted graphs
     
+    title: str
+    Title for the plot
+    
     Return
     ------
     None
@@ -113,15 +116,15 @@ def multi_step_plot(history, true_future, save_path, epicenter = None, predictio
     
     distances = []
     plt.figure(figsize=(15, 10))
-    num_in = create_time_steps(history.shape[1])
-    num_out = true_future.shape[1]
+    num_in = np.arange(history.shape[1])
+    future_out = np.arange(true_future.shape[1]) + history.shape[1]
     
     if epicenter is None:
         # Randomly assign epicenter to be CI.WRV2 if none given
         epicenter = (36.00774, -117.8904)
     
-    mean = np.mean(history)
-    std = np.std(history)
+    mean = np.mean(history[:, :15])
+    std = np.std(history[:, :15])
     
     for i in tqdm(range(len(STATION_COORDS))):
         station = list(STATION_COORDS.keys())[i]
@@ -134,16 +137,17 @@ def multi_step_plot(history, true_future, save_path, epicenter = None, predictio
         )
         
         plt.plot(
-            np.arange(num_out),
+            future_out,
             scale * (true_future[i] - mean)/std/2 + dist, 
             'b--',
             linewidth = 1
         )
         
         if prediction is not None:
+            pred_out = np.arange(prediction.shape[1]) + history.shape[1]
             num_preds = prediction.shape[1]
             plt.plot(
-                np.arange(num_preds),
+                pred_out,
                 scale * (prediction[i] - mean)/std/2 + dist, 
                 'r--',
                 linewidth = 1
@@ -156,6 +160,9 @@ def multi_step_plot(history, true_future, save_path, epicenter = None, predictio
     
     plt.ylabel("Distance from Epicenter (km)")
     plt.xlabel("Time (s)")
+    
+    if title is not None:
+        plt.title(title)
     
     plt.savefig(save_path)
     plt.close()
