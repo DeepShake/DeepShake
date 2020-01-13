@@ -79,7 +79,7 @@ def create_time_steps(length):
     return time_steps
 
 
-def multi_step_plot(history, true_future, save_path, epicenter = None, prediction = None, scale = 1, title = None):
+def multi_step_plot(history, true_future, save_path, meta, prediction = None, scale = 1, title = None):
     """
     Plots the timeseries data for a given earthquake across the different stations
     based on the distance of each station from the epicenter of the quake,
@@ -96,8 +96,9 @@ def multi_step_plot(history, true_future, save_path, epicenter = None, predictio
     save_path: str
     Path under which to save the desired plot
     
-    epicenter: tuple(float), default = None
-    Latitude/Longitude point of the epicenter of the earthquake
+    meta: Dict
+    Earthquake metadata with required fields 
+    lat, lng, mag, date
     
     prediction: numpy array, shape = (15, t_future), default = None
     Time series of the predicted future progress of the quake
@@ -115,19 +116,37 @@ def multi_step_plot(history, true_future, save_path, epicenter = None, predictio
     """
     
     distances = []
-    plt.figure(figsize=(15, 10))
+    plt.figure(figsize=(20, 15))
     num_in = np.arange(history.shape[1])
     future_out = np.arange(true_future.shape[1]) + history.shape[1]
     
-    if epicenter is None:
-        # Randomly assign epicenter to be CI.WRV2 if none given
-        epicenter = (36.00774, -117.8904)
+    epicenter = (float(meta['lat']), float(meta['lng']))
     
     mean = np.mean(history[:, :15])
     std = np.std(history[:, :15])
     
-    for i in tqdm(range(len(STATION_COORDS))):
+    plt.rcParams.update({'font.size': 16})
+    
+    min_dist = float('inf')
+    max_dist = 0.0
+    distances = {}
+    for i in range(len(STATION_COORDS)):
         station = list(STATION_COORDS.keys())[i]
+        dist = CalcDistance(epicenter, STATION_COORDS[station])
+        distances[station] = dist
+        if dist > max_dist:
+            max_dist = dist
+        if dist < min_dist:
+            min_dist = dist
+    
+    distances = sorted(
+        distances.items(), 
+        key = lambda kv:(kv[1], kv[0])
+    )
+    num_stations = len(distances)
+    
+    for i in tqdm(range(len(distances))):
+        station = distances[i][0]
         dist = CalcDistance(epicenter, STATION_COORDS[station])
         plt.plot(
             num_in,
@@ -153,16 +172,28 @@ def multi_step_plot(history, true_future, save_path, epicenter = None, predictio
                 linewidth = 1
             )
             
-        if i % 2 == 0:
-            plt.text(num_in[0], dist, station)
-        else:
-            plt.text(num_in[5], dist, station)
+        plt.annotate(
+            station,
+            xy=(0, dist), 
+            xycoords='data',
+            xytext=(-10, min_dist + (i + 1) * (max_dist - min_dist) / num_stations), 
+            textcoords='data',
+            arrowprops=dict(arrowstyle="-", color='r')
+        )
     
     plt.ylabel("Distance from Epicenter (km)")
     plt.xlabel("Time (s)")
     
     if title is not None:
-        plt.title(title)
+        plt.title(
+            f"{title}\nDate: {meta.get('date', '')}, Mag: {meta.get('mag', '')}, Lat: {meta.get('lat', '')}, Lng: {meta.get('lng', '')}"
+        )
+    else:
+        plt.title(
+            f"Date: {meta.get('date', '')}, Mag: {meta.get('mag', '')}, Lat: {meta.get('lat', '')}, Lng: {meta.get('lng', '')}"
+        )
+    
+    plt.xlim(-12, history.shape[1] + true_future.shape[1] + 2)
     
     plt.savefig(save_path)
     plt.close()

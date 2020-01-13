@@ -12,7 +12,7 @@ mpl.rcParams['axes.grid'] = False
 # tf.random.set_random_seed(13)
 # np.random.seed(13)
 
-def shuffle_together(x, y, seed=13):
+def shuffle_together(x, y, seed=10):
     ## Shuffle together two arrays of the exact same dimensions
     idxs = np.arange(x.shape[0])
     np.random.seed(seed)
@@ -84,3 +84,13 @@ def plot_train_history(history, title):
     plt.legend()
 
     plt.show()
+    
+def recover_quake(y_pred, y, means, norms, num_quakes):
+    y_pred = y_pred.reshape((num_quakes, -1, 15))
+    y = y.reshape((num_quakes, -1, 15))
+                  
+    y = y*np.expand_dims(norms, 1) + np.expand_dims(means, 1)
+    y_pred = y_pred*np.expand_dims(norms, 1) + np.expand_dims(means, 1)
+
+    return y, y_pred, np.abs((y - y_pred).reshape((-1,)))
+
