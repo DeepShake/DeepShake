@@ -11,6 +11,6 @@ __pycache__
 .ipynb_checkpoints
 *.h5
 *.csv
-
-
+*.npy
+*.json
 

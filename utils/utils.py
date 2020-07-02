@@ -25,9 +25,11 @@ def shuffle_together(x, y, seed=10):
 def multivariate_data_balanced(dataset, history_size,
                       target_size, step, 
                       quake_classes, num_copies, 
-                      single_step=False):
+                      single_step=False,
+                      return_indices = False):
     data = []
     labels = []
+    quake_idxs = []
     
     start_index = history_size
     end_index = dataset.shape[1] - target_size
@@ -39,19 +41,32 @@ def multivariate_data_balanced(dataset, history_size,
         for i in range(start_index, end_index):
             indices = range(i-history_size, i, step)
             data.extend([quake[indices]]*quake_wt)
-
+            quake_idxs.extend([q_idx]*quake_wt)
+            
             if single_step:
                 labels.extend([quake[i+target_size]]*quake_wt)
             else:
                 labels.extend([quake[i:i+target_size]]*quake_wt)
+    
+    if return_indices is True:    
+        return np.array(data), np.array(labels), np.array(quake_idxs)
+    else:
+        return np.array(data), np.array(labels)
 
-    return np.array(data), np.array(labels)
 
+"""
+STEP = 1
+target_size = 10
+past_history = 15
+single_step=False
+"""
 def multivariate_data(dataset, history_size,
                       target_size, step, 
-                      single_step=False):
+                      single_step=False, 
+                      return_indices = False):
     data = []
     labels = []
+    quake_idxs = []
     
     start_index = history_size
     end_index = dataset.shape[1] - target_size
@@ -61,13 +76,16 @@ def multivariate_data(dataset, history_size,
         for i in range(start_index, end_index):
             indices = range(i-history_size, i, step)
             data.append(quake[indices])
-
+            quake_idxs.append(q_idx)
+        
             if single_step:
                 labels.append(quake[i+target_size])
             else:
                 labels.append(quake[i:i+target_size])
-
-    return np.array(data), np.array(labels)
+    if return_indices is True:      
+        return np.array(data), np.array(labels), np.array(quake_idxs)
+    else:
+        return np.array(data), np.array(labels)
 
 def plot_train_history(history, title):
     loss = history.history['loss']
